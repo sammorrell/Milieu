@@ -18,8 +18,9 @@ final class Wallpaper: Identifiable {
     var dateAdded: Date
     var isFavorite: Bool
     var tags: [String]
+    var sourceUrl: URL?
 
-    init(name: String, filePath: String, bookmarkData: Data? = nil, dateAdded: Date = .now, isFavorite: Bool = false, tags: [String] = []) {
+    init(name: String, filePath: String, bookmarkData: Data? = nil, dateAdded: Date = .now, isFavorite: Bool = false, tags: [String] = [], sourceUrl: URL? = .none) {
         self.id = UUID()
         self.name = name
         self.filePath = filePath
@@ -27,10 +28,24 @@ final class Wallpaper: Identifiable {
         self.dateAdded = dateAdded
         self.isFavorite = isFavorite
         self.tags = tags
+        self.sourceUrl = sourceUrl
     }
     
     public func showInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: filePath)])
+    }
+    
+    public func sourceUrlToPasteboard() {
+        if let url = sourceUrl {
+            #if os(macOS)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(url.absoluteString, forType: .string)
+            #elseif os(iOS)
+            UIPasteboard.general.clearContents()
+            UIPasteboard.general.setString(url.absoluteString, forType: .string)
+            #endif
+            
+        }
     }
 }
 

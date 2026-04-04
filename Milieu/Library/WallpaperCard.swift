@@ -51,6 +51,8 @@ struct WallpaperCard: View {
                 onToggleFavorite?()
             }
             Divider()
+            Button("Copy Source URL") { wallpaper.sourceUrlToPasteboard() }
+                .disabled(wallpaper.sourceUrl == nil)
             Button("Show in Finder") { wallpaper.showInFinder() }
             Button("Remove from Library", role: .destructive) { onRemove?() }
         }
