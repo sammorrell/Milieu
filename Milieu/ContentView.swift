@@ -8,59 +8,65 @@
 import SwiftUI
 import SwiftData
 
+enum SidebarItem: String, CaseIterable, Identifiable {
+    case dashboard = "Dashboard"
+    case library = "Library"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .dashboard: return "slider.horizontal.2.square"
+        case .library: return "books.vertical.fill"
+        }
+    }
+}
+
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @State private var selection: SidebarItem? = .library
 
     var body: some View {
         NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+            List(SidebarItem.allCases, selection: $selection) { item in
+                Label(item.rawValue, systemImage: item.icon)
+                    .tag(item)
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+            .listStyle(.sidebar)
         } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            switch selection {
+            case .library, .none:
+                WallpaperLibraryView()
+            case .dashboard:
+                DashboardPlaceholderView()
             }
         }
     }
 }
 
+struct DashboardPlaceholderView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "slider.horizontal.2.square")
+                .font(.system(size: 56))
+                .foregroundStyle(.secondary)
+            Text("Dashboard")
+                .font(.title2).bold()
+            Text("Coming soon.")
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("Dashboard")
+    }
+}
+
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Wallpaper.self, configurations: config)
+    for sample in Wallpaper.previewSamples {
+        container.mainContext.insert(sample)
+    }
+    return ContentView()
+        .modelContainer(container)
+        .frame(width: 1000, height: 650)
 }

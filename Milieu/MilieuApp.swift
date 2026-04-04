@@ -10,10 +10,15 @@ import SwiftData
 
 @main
 struct MilieuApp: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Wallpaper.self,
         ])
+
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
@@ -26,7 +31,11 @@ struct MilieuApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    appDelegate.modelContainer = sharedModelContainer
+                }
         }
         .modelContainer(sharedModelContainer)
     }
 }
+
