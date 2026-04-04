@@ -15,6 +15,9 @@ struct WallpaperCard: View {
     var onRemove: (() -> Void)? = nil
 
     @State private var thumbnail: NSImage?
+    @State private var isRenaming = false
+    @State private var editingName = ""
+    @FocusState private var renameFieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -36,15 +39,14 @@ struct WallpaperCard: View {
                 .padding(6)
             }
 
-            Text(wallpaper.name)
-                .font(.caption)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            nameView
+                .frame(height: 16)
         }
         .contentShape(Rectangle())
         .contextMenu {
             Button("Set as Wallpaper") { onSetWallpaper?() }
             Divider()
+            Button("Rename") { startRename() }
             Button(wallpaper.isFavorite ? "Remove from Favorites" : "Add to Favorites") {
                 onToggleFavorite?()
             }
@@ -58,6 +60,51 @@ struct WallpaperCard: View {
             let filePath = wallpaper.filePath
             thumbnail = await loadThumbnail(bookmarkData: bookmarkData, fallbackPath: filePath)
         }
+    }
+
+    @ViewBuilder
+    private var nameView: some View {
+        if isRenaming {
+            TextField("Name", text: $editingName)
+                .font(.caption)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 4)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                .focused($renameFieldFocused)
+                .onSubmit { commitRename() }
+                .onKeyPress(.escape) {
+                    cancelRename()
+                    return .handled
+                }
+                .onChange(of: renameFieldFocused) { _, focused in
+                    if !focused { commitRename() }
+                }
+        } else {
+            Text(wallpaper.name)
+                .font(.caption)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .onTapGesture { startRename() }
+        }
+    }
+
+    private func startRename() {
+        editingName = wallpaper.name
+        isRenaming = true
+        renameFieldFocused = true
+    }
+
+    private func commitRename() {
+        guard isRenaming else { return }
+        isRenaming = false
+        let trimmed = editingName.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty {
+            wallpaper.name = trimmed
+        }
+    }
+
+    private func cancelRename() {
+        isRenaming = false
     }
 
     @ViewBuilder
