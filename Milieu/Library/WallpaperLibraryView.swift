@@ -173,7 +173,8 @@ struct WallpaperLibraryView: View {
                         onSetWallpaper: { setWallpaper(wallpaper) },
                         onToggleFavorite: { toggleFavorite(wallpaper) },
                         onRemove: { wallpaperToDelete = wallpaper },
-                        onInspect: { inspectedWallpaper = wallpaper; isInspectorShown = true }
+                        onInspect: { inspectedWallpaper = wallpaper; isInspectorShown = true },
+                        onSetWallpaperOnScreen: { screen in setWallpaper(wallpaper, on: screen) }
                     )
                     .onTapGesture(count: 2) {
                         setWallpaper(wallpaper)
@@ -270,6 +271,12 @@ struct WallpaperLibraryView: View {
     private func setWallpaper(_ wallpaper: Wallpaper) {
         withSecureAccess(bookmarkData: wallpaper.bookmarkData, fallbackPath: wallpaper.filePath) { url in
             setDesktopWallpaper(to: url.path)
+        }
+    }
+
+    private func setWallpaper(_ wallpaper: Wallpaper, on screen: NSScreen) {
+        withSecureAccess(bookmarkData: wallpaper.bookmarkData, fallbackPath: wallpaper.filePath) { url in
+            setDesktopWallpaper(to: url.path, on: screen)
         }
     }
 

@@ -14,6 +14,7 @@ struct WallpaperCard: View {
     var onToggleFavorite: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
     var onInspect: (() -> Void)? = nil
+    var onSetWallpaperOnScreen: ((NSScreen) -> Void)? = nil
 
     @State private var thumbnail: NSImage?
     @State private var isRenaming = false
@@ -56,6 +57,14 @@ struct WallpaperCard: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button("Set as Wallpaper") { onSetWallpaper?() }
+            if NSScreen.screens.count > 1 {
+                ForEach(NSScreen.screens, id: \.localizedName) { screen in
+                    Button("Set on \(screen.localizedName)") {
+                        onSetWallpaperOnScreen?(screen)
+                    }
+                }
+            }
+
             Divider()
             Button("Get Info") { onInspect?() }
             Button("Rename") { startRename() }

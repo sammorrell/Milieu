@@ -43,6 +43,15 @@ func setDesktopWallpaper(to imagePath: String) {
     }
 }
 
+func setDesktopWallpaper(to imagePath: String, on screen: NSScreen) {
+    let url = URL(fileURLWithPath: imagePath)
+    do {
+        try NSWorkspace.shared.setDesktopImageURL(url, for: screen, options: [:])
+    } catch {
+        print("Failed to set wallpaper on \(screen.localizedName): \(error)")
+    }
+}
+
 /// Loads a downscaled thumbnail for the given wallpaper, using its bookmark
 /// (or falling back to a plain path). Safe to call from a detached task.
 func loadThumbnail(bookmarkData: Data?, fallbackPath: String) async -> NSImage? {
