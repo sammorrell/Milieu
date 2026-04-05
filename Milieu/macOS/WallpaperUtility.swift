@@ -43,6 +43,23 @@ func setDesktopWallpaper(to imagePath: String) {
     }
 }
 
+/// Loads a downscaled thumbnail for the given wallpaper, using its bookmark
+/// (or falling back to a plain path). Safe to call from a detached task.
+func loadThumbnail(bookmarkData: Data?, fallbackPath: String) async -> NSImage? {
+    await Task.detached(priority: .utility) {
+        withSecureAccess(bookmarkData: bookmarkData, fallbackPath: fallbackPath) { url in
+            guard let image = NSImage(contentsOf: url) else { return nil }
+            let targetSize = NSSize(width: 560, height: 315)
+            let thumb = NSImage(size: targetSize)
+            thumb.lockFocus()
+            image.draw(in: NSRect(origin: .zero, size: targetSize),
+                       from: .zero, operation: .copy, fraction: 1.0)
+            thumb.unlockFocus()
+            return thumb
+        }
+    }.value
+}
+
 func printCurrentWallpapers() {
     for screen in NSScreen.screens {
         if let wallpaperURL = NSWorkspace.shared.desktopImageURL(for: screen) {

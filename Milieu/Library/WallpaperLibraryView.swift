@@ -15,6 +15,8 @@ struct WallpaperLibraryView: View {
 
     @State private var selectedWallpaper: Wallpaper?
     @State private var wallpaperToDelete: Wallpaper?
+    @State private var inspectedWallpaper: Wallpaper?
+    @State private var isInspectorShown = false
     @State private var searchText = ""
     @State private var sortOrder: WallpaperSortOrder = .dateAdded
     @State private var showFavoritesOnly = false
@@ -70,6 +72,34 @@ struct WallpaperLibraryView: View {
         }
         .navigationTitle("Library")
         .navigationSubtitle("\(wallpapers.count) wallpaper\(wallpapers.count == 1 ? "" : "s")")
+        .onChange(of: selectedWallpaper) { _, newValue in
+            if isInspectorShown, let newValue {
+                inspectedWallpaper = newValue
+            }
+        }
+        .inspector(isPresented: $isInspectorShown) {
+            if let wallpaper = inspectedWallpaper {
+                WallpaperInspectorView(
+                    wallpaper: wallpaper,
+                    onSetWallpaper: { setWallpaper(wallpaper) }
+                )
+                .id(wallpaper.id)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.secondary)
+                    Text("No Selection")
+                        .font(.headline)
+                    Text("Select a wallpaper and press ⓘ to inspect it.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+            }
+        }
         .alert(item: $wallpaperToDelete) { wallpaper in
             Alert(
                 title: Text("Remove \"\(wallpaper.name)\"?"),
@@ -122,6 +152,12 @@ struct WallpaperLibraryView: View {
             Button(action: addWallpapers) {
                 Label("Add", systemImage: "plus")
             }
+
+            Toggle(isOn: $isInspectorShown) {
+                Image(systemName: "sidebar.right")
+            }
+            .toggleStyle(.button)
+            .help("Toggle Inspector")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -136,7 +172,8 @@ struct WallpaperLibraryView: View {
                         isSelected: selectedWallpaper?.id == wallpaper.id,
                         onSetWallpaper: { setWallpaper(wallpaper) },
                         onToggleFavorite: { toggleFavorite(wallpaper) },
-                        onRemove: { wallpaperToDelete = wallpaper }
+                        onRemove: { wallpaperToDelete = wallpaper },
+                        onInspect: { inspectedWallpaper = wallpaper; isInspectorShown = true }
                     )
                     .onTapGesture(count: 2) {
                         setWallpaper(wallpaper)

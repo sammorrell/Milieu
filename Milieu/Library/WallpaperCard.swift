@@ -13,6 +13,7 @@ struct WallpaperCard: View {
     var onSetWallpaper: (() -> Void)? = nil
     var onToggleFavorite: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
+    var onInspect: (() -> Void)? = nil
 
     @State private var thumbnail: NSImage?
     @State private var isRenaming = false
@@ -21,23 +22,33 @@ struct WallpaperCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ZStack(alignment: .topTrailing) {
-                thumbnailView
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
-                    }
-
-                Button(action: { onToggleFavorite?() }) {
-                    Image(systemName: wallpaper.isFavorite ? "heart.fill" : "heart")
-                        .foregroundStyle(wallpaper.isFavorite ? .red : .white)
-                        .padding(5)
-                        .background(.black.opacity(0.45), in: Circle())
+            thumbnailView
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
                 }
-                .buttonStyle(.plain)
-                .padding(6)
-            }
+                .overlay(alignment: .topTrailing) {
+                    Button(action: { onToggleFavorite?() }) {
+                        Image(systemName: wallpaper.isFavorite ? "heart.fill" : "heart")
+                            .foregroundStyle(wallpaper.isFavorite ? .red : .white)
+                            .padding(5)
+                            .background(.black.opacity(0.45), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(6)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    Button(action: { onInspect?() }) {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(.black.opacity(0.45), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(6)
+                    .help("Get Info")
+                }
 
             nameView
                 .frame(height: 16)
@@ -46,6 +57,7 @@ struct WallpaperCard: View {
         .contextMenu {
             Button("Set as Wallpaper") { onSetWallpaper?() }
             Divider()
+            Button("Get Info") { onInspect?() }
             Button("Rename") { startRename() }
             Button(wallpaper.isFavorite ? "Remove from Favorites" : "Add to Favorites") {
                 onToggleFavorite?()
@@ -128,19 +140,3 @@ struct WallpaperCard: View {
     }
 }
 
-private func loadThumbnail(bookmarkData: Data?, fallbackPath: String) async -> NSImage? {
-    await Task.detached(priority: .utility) {
-        withSecureAccess(bookmarkData: bookmarkData, fallbackPath: fallbackPath) { url in
-            guard let image = NSImage(contentsOf: url) else { return nil }
-            let targetSize = NSSize(width: 560, height: 315)
-            let thumb = NSImage(size: targetSize)
-            thumb.lockFocus()
-            image.draw(in: NSRect(origin: .zero, size: targetSize),
-                       from: .zero,
-                       operation: .copy,
-                       fraction: 1.0)
-            thumb.unlockFocus()
-            return thumb
-        }
-    }.value
-}
